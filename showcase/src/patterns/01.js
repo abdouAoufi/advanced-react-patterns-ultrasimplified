@@ -82,7 +82,7 @@ const Clap = ({ animationTimeLine }) => {
       <CountTotal countTotal={countTotal} />
     </button>
   );
-};
+};k
 
 const ClapIcon = ({ isClicked }) => {
   return (
