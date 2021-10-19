@@ -1,6 +1,18 @@
-import React, { useState, useLayoutEffect, useCallback } from "react";
+import React, {
+  useState,
+  useLayoutEffect,
+  useCallback,
+  createContext,
+  useMemo,
+  useContext,
+} from "react";
 import styled from "./index.css";
 import mojs from "mo-js";
+import io from "socket.io-client";
+
+
+
+
 
 const initialState = {
   count: 0,
@@ -13,6 +25,8 @@ const useClapAnimation = ({ clapEl, countEl, clapTotalEl }) => {
     () => new mojs.Timeline()
   );
   useLayoutEffect(() => {
+    // io("http://localhost:4000")
+    // io.connect("http://localhost:4000");
     if (!clapEl || !countEl || !clapEl) return;
     const tlDuration = 300;
     const scaleButton = new mojs.Html({
@@ -53,14 +67,16 @@ const useClapAnimation = ({ clapEl, countEl, clapTotalEl }) => {
   return animationTimeLine;
 };
 
-const Clap = () => {
+const ClapContext = createContext();
+const { Provider } = ClapContext;
+const Clap = ({ children }) => {
   const MAX_USER_CLAP = 12;
   const [clapState, setClapState] = useState(initialState);
-  const { count, countTotal, isClicked } = clapState;
+  const { count } = clapState;
   const [{ clapRef, clapCountRef, clapTotalRef }, setRefState] = useState({});
 
   const setRef = useCallback((node) => {
-    if(!node) return;
+    if (!node) return;
     setRefState((prevState) => ({
       ...prevState,
       [node.dataset.refkey]: node, // for distinction !
@@ -81,22 +97,31 @@ const Clap = () => {
         count < MAX_USER_CLAP ? prevState.countTotal + 1 : prevState.countTotal,
     }));
   };
+
+  const memoizedValue = useMemo(
+    () => ({
+      ...clapState,
+      setRef,
+    }),
+    [clapState, setRef]
+  );
   return (
-    <button
-      data-refkey="clapRef"
-      ref={setRef}
-      id="clap"
-      className={styled.clap}
-      onClick={handleClapClick}
-    >
-      <ClapIcon isClicked={isClicked} />
-      <ClapCount count={count} setRef={setRef} />
-      <CountTotal countTotal={countTotal} setRef={setRef} />
-    </button>
+    <Provider value={memoizedValue}>
+      <button
+        data-refkey="clapRef"
+        ref={setRef}
+        id="clap"
+        className={styled.clap}
+        onClick={handleClapClick}
+      >
+        {children}
+      </button>
+    </Provider>
   );
 };
 
-const ClapIcon = ({ isClicked }) => {
+const ClapIcon = () => {
+  const { isClicked } = useContext(ClapContext);
   return (
     <span>
       {/* SVG */}
@@ -113,7 +138,8 @@ const ClapIcon = ({ isClicked }) => {
   );
 };
 
-const ClapCount = ({ count, setRef }) => {
+const ClapCount = () => {
+  const { count, setRef } = useContext(ClapContext);
   return (
     <span data-refkey="clapCountRef" ref={setRef} className={styled.count}>
       +{count}
@@ -121,7 +147,8 @@ const ClapCount = ({ count, setRef }) => {
   );
 };
 
-const CountTotal = ({ countTotal, setRef }) => {
+const CountTotal = () => {
+  const { countTotal, setRef } = useContext(ClapContext);
   return (
     <span data-refkey="clapTotalRef" ref={setRef} className={styled.total}>
       {" "}
@@ -131,7 +158,13 @@ const CountTotal = ({ countTotal, setRef }) => {
 };
 
 const Usage = () => {
-  return <Clap />;
+  return (
+    <Clap>
+      <ClapIcon />
+      <ClapCount />
+      <CountTotal />
+    </Clap>
+  );
 };
 
 export default Usage;

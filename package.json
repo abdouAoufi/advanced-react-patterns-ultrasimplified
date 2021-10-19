@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "mo-js": "^0.288.2"
+    "mo-js": "^0.288.2",
+    "socket.io-client": "^4.2.0"
   }
 }
