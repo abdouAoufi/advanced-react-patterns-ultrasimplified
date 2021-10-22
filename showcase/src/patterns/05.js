@@ -209,6 +209,7 @@ const INITIAL_STATE = {
 };
 
 const Usage = () => {
+  // because the state is in the same component it's being controlling by this one!
   const [state, setState] = useState(INITIAL_STATE);
   const MAX_USER_CLAP = 10;
   const handleClap = () => {
@@ -220,12 +221,13 @@ const Usage = () => {
   };
   return (
     <div>
-      <Clap values={state} className={userCostumStyle.clap} onClap={handleClap}>
+      <Clap style={{ margin: "0 8px" }} values={state} className={userCostumStyle.clap} onClap={handleClap}>
         <Clap.Icon />
         <Clap.Count />
         <Clap.Total />
       </Clap>
-      <Clap values={state} className={userCostumStyle.clap} onClap={handleClap}>
+
+      <Clap style={{ margin: "0 8px" }} values={state} className={userCostumStyle.clap} onClap={handleClap}>
         <Clap.Icon />
         <Clap.Count />
         <Clap.Total />
