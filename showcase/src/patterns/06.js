@@ -1,8 +1,8 @@
-import React, { useState, useLayoutEffect, useCallback } from "react";
+import React, { useState, useLayoutEffect, useCallback , useRef , useEffect} from "react";
 import styled from "./index.css";
 import mojs from "mo-js";
 
-const initialState = {
+const INITIAL_STATE = {
     count: 0,
     countTotal: 267,
     isClicked: false,
@@ -66,34 +66,50 @@ const useDOMRef = () => {
     return [DOMRef, setRef]
 }
 
-const Clap = () => {
+const useClapState = (initialState = INITIAL_STATE) => {
     const MAX_USER_CLAP = 12;
     const [clapState, setClapState] = useState(initialState);
-    const { count, countTotal, isClicked } = clapState;
-    const [{ clapRef, clapCountRef, clapTotalRef }, setRef] = useDOMRef();
+    const updateClapState = useCallback(() => {
+        setClapState(({ count, countTotal }) => ({
+            count: Math.min(count + 1, MAX_USER_CLAP),
+            isClicked: true,
+            countTotal:
+                count < MAX_USER_CLAP ? countTotal + 1 : countTotal,
+        }));
+    }, [])
+    return [clapState, updateClapState];
+}
 
+const useEffectAfterMount = (cb, dps) => {
+    const compnentJustMounted = useRef(true);
+    useEffect(() => {
+        if (!compnentJustMounted.current) {
+            return cb();
+        }
+        compnentJustMounted.current = false;
+    }, dps);
+}
+
+const Clap = () => {
+    const [{ clapRef, clapCountRef, clapTotalRef }, setRef] = useDOMRef();
+    const [clapState, updateClapState] = useClapState(INITIAL_STATE);
+    const { count, countTotal, isClicked } = clapState;
 
     const animationTimeLine = useClapAnimation({
         clapEl: clapRef,
         countEl: clapCountRef,
         clapTotalEl: clapTotalRef,
     });
-    const handleClapClick = () => {
-        animationTimeLine.replay();
-        setClapState((prevState) => ({
-            count: Math.min(count + 1, MAX_USER_CLAP),
-            isClicked: true,
-            countTotal:
-                count < MAX_USER_CLAP ? prevState.countTotal + 1 : prevState.countTotal,
-        }));
-    };
+
+    useEffectAfterMount(() => { animationTimeLine.replay() }, [count])
+
     return (
         <button
             data-refkey="clapRef"
             ref={setRef}
             id="clap"
             className={styled.clap}
-            onClick={handleClapClick}
+            onClick={updateClapState}
         >
             <ClapIcon isClicked={isClicked} />
             <ClapCount count={count} setRef={setRef} />
