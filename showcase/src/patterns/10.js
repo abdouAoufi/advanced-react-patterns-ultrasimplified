@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useRef,
   useEffect,
+  useReducer,
 } from "react";
 import styled from "./index.css";
 import mojs from "mo-js";
@@ -59,7 +60,7 @@ const useClapAnimation = ({ clapEl, countEl, clapTotalEl }) => {
   }, [clapEl, countEl, clapTotalEl]);
   return animationTimeLine;
 };
-
+const MAX_USER_CLAP = 40;
 const useDOMRef = () => {
   const [DOMRef, setRefState] = useState({});
 
@@ -73,19 +74,30 @@ const useDOMRef = () => {
   return [DOMRef, setRef];
 };
 
+const reducer = ({ count, countTotal }, { type, payload }) => {
+  switch (type) {
+    case "clap":
+      return {
+        count: Math.min(count + 1, MAX_USER_CLAP),
+        isClicked: true,
+        countTotal: count < MAX_USER_CLAP ? countTotal + 1 : countTotal,
+      };
+    case "reset":
+      return payload;
+    default:
+      break;
+  }
+  return state;
+};
+
 const useClapState = (initialState = INITIAL_STATE) => {
-  const MAX_USER_CLAP = 40;
   const userInitialState = useRef(initialState);
-  const [clapState, setClapState] = useState(initialState);
-  const { count, countTotal } = clapState;
+  const [clapState, dispatch] = useReducer(reducer, initialState);
+  const { count } = clapState;
   const resetRef = useRef(0);
   const updateClapState = useCallback(() => {
-    setClapState(({ count, countTotal }) => ({
-      count: Math.min(count + 1, MAX_USER_CLAP),
-      isClicked: true,
-      countTotal: count < MAX_USER_CLAP ? countTotal + 1 : countTotal,
-    }));
-  }, []);
+    dispatch({ type: "clap" }, []);
+  });
   // porps collection it's object at the end ==> turn it to a function!
   const getTogglerProps = ({ ...otherProps }) => ({
     onClick: updateClapState,
@@ -102,8 +114,9 @@ const useClapState = (initialState = INITIAL_STATE) => {
   });
 
   const reset = useCallback(() => {
-    resetRef.current++;
-    setClapState(userInitialState.current);
+    dispatch({ type: "reset", payLoad: userInitialState.current });
+    // resetRef.current++;
+    // setClapState(userInitialState.current);
   }, []);
   return {
     clapState,
@@ -182,16 +195,10 @@ const userInitialState = {
 
 const Usage = () => {
   const [{ clapRef, clapCountRef, clapTotalRef }, setRef] = useDOMRef();
-  const {
-    clapState,
-    updateClapState,
-    getTogglerProps,
-    getCounterProps,
-    reset,
-    resetDep,
-  } = useClapState(userInitialState);
+  const { clapState, getTogglerProps, getCounterProps, reset, resetDep } =
+    useClapState(userInitialState);
   const [uploadingReset, setUpload] = useState(false);
-  const { count, countTotal, isClicked } = clapState;
+  const { count, countTotal, isClicked } = clapState; // destructure the clapstate...
   const animationTimeLine = useClapAnimation({
     clapEl: clapRef,
     countEl: clapCountRef,
@@ -205,7 +212,7 @@ const Usage = () => {
   useEffectAfterMount(() => {
     // side effect ...
     setUpload(true);
-    console.log("update")
+    console.log("update");
     setTimeout(() => {
       setUpload(false);
     }, 1000);
@@ -235,11 +242,7 @@ const Usage = () => {
           Reset
         </button>
         <pre className={userStyle.reset}>
-          {JSON.stringify(
-            { count, countTotal, resetDep },
-            null,
-            2
-          )}
+          {JSON.stringify({ count, countTotal, resetDep }, null, 2)}
         </pre>
         <pre className={userStyle.reset}>
           {uploadingReset ? `uploading reset ${resetDep}` : "no reset"}

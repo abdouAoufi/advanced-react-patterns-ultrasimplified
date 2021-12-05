@@ -9,7 +9,7 @@ const initialState = {
 };
 
 const withClapAnimation = (WrappedComponent) => {
-  class WithClapAnimation extends React.Component {
+    class WithClapAnimation extends React.Component {
     animationTimeLine = new mojs.Timeline();
     state = {
       animationTimeline: this.animationTimeLine,
